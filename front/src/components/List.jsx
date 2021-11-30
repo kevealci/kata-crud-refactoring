@@ -1,39 +1,40 @@
-import { useContext , useEffect } from "react";
+import React, { useContext , useEffect } from "react";
 import { API_URL } from "../config";
-import {DELETE_ITEM,UPDATE_LIST} from "../actions/todoActions"
+import {TYPES} from "../actions/todoActions"
 import { todoContext } from "../context/todoContext";
 import {del, get, put} from "../util/helpHttp"
 
 export const List = () => {
-  const { dispatch, state } = useContext(todoContext);
+  const {state, dispatch } = useContext(todoContext);
+  //console.log(`state`, state)
   
   useEffect(() => {
-
-    const getTodos = async () => {
-      return await get(API_URL+"/all")
+    const fetchTodos = async () => {
+      const list = await get(API_URL+"/all")
+      dispatch({ type: TYPES.UPDATE_LIST,list})
     }
-    const list = getTodos();
-    dispatch({ type:UPDATE_LIST, list })
-  }, [dispatch]);
+    fetchTodos()
+  }, [state]);
 
   const onDelete = async (id) => {
     await del(`${API_URL}/delete/${id}`)
-    dispatch({ type: DELETE_ITEM, id })
+    dispatch({ type: TYPES.DELETE_ITEM, id })
   };
 
   const onEdit = (todo) => {
-    dispatch({ type: "edit-item", item: todo })
+    console.log(`todo`, todo)
+    dispatch({ type: TYPES.EDIT_ITEM, item: todo })
   };
 
-  const onChange = (event, todo) => {
+  const onChange = async(event, todos) => {
     const request = {
-      name: todo.name,
-      id: todo.id,
+      name: todos.name,
+      id: todos.id,
       completed: event.target.checked
     };
 
     const todo = await put(API_URL+"/update",{body:request})
-    dispatch({ type: "update-item", item: todo })
+    dispatch({ type: TYPES.UPDATE_CHECK, item: todo })
 
   };
 
@@ -51,13 +52,13 @@ export const List = () => {
         </tr>
       </thead>
       <tbody>
-        {state.list.map((todo) => {
+        {state?.list?.map((todo) => {
           return <tr key={todo.id} style={todo.completed ? decorationDone : {}}>
             <td>{todo.id}</td>
             <td>{todo.name}</td>
             <td><input type="checkbox" defaultChecked={todo.completed} onChange={(event) => onChange(event, todo)}></input></td>
-            <td><button onClick={() => onDelete(todo.id)}>Eliminar</button></td>
             <td><button onClick={() => onEdit(todo)}>Editar</button></td>
+            <td><button onClick={() => onDelete(todo.id)}>Eliminar</button></td>
           </tr>
         })}
       </tbody>
